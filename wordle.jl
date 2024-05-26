@@ -53,4 +53,14 @@ function play()
     end
 end
 
-play()
+function assignscore(ret)
+    score = 0
+    for i in 1:lastindex(ret)
+        if ret[i] == '⬜'
+            score = score + 15
+        elseif ret[i] == '🟨'
+            score = score + 2
+        end
+    end
+    return score
+end
