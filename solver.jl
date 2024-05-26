@@ -1,6 +1,11 @@
-using flux, CUDA, wordle
+using flux, CUDA
 using flux:train!
+include("wordle.jl")
 
 model = Chain(
-    multiheadattention()
+    RNN()
 ) |> gpu
+
+function loss(x, y)
+    moy = model(x)
+end
