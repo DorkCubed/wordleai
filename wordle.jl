@@ -10,22 +10,21 @@ function wordle(wotd, guess)
     end
     for i in 1:lastindex(guess)
         if guess[i] == wotd[i]
-            ret[i] = '🟩'
+            ret[i] = '2'
             chg = guess[i]
             wotd = replace(wotd, chg => '0' , count = 1)
         else
-            ret[i] = '⬜'
+            ret[i] = '0'
         end
     end
     for i in 1:lastindex(guess)
         if guess[i] in wotd
-            ret[i] = '🟨'
+            ret[i] = '1'
             chg = guess[i]
             wotd = replace(wotd, chg => '0' , count = 1)
         end
     end
 
-    ret = join(ret)
     return ret
 end
 
@@ -37,6 +36,10 @@ function play()
             print("Enter your guess: ")
             guess = readline()
             won = wordle(wotd, guess)
+            won = replace(won, '0' => '⬜')
+            won = replace(won, '1' => '🟨')
+            won = replace(won, '2' => '🟩')
+            won = join(won)
             println(won)
             n = n + 1
 
@@ -44,6 +47,7 @@ function play()
             print("Enter your guess: ")
             guess = readline()
             won = wordle(wotd, guess)
+            won = join(won)
             println(won)
             
         else
@@ -56,10 +60,10 @@ end
 function assignscore(ret)
     score = 0
     for i in 1:lastindex(ret)
-        if ret[i] == '⬜'
+        if ret[i] == '0'
             score = score + 15
-        elseif ret[i] == '🟨'
-            score = score + 2
+        elseif ret[i] == '1'
+            score = score + 5
         end
     end
     return score
