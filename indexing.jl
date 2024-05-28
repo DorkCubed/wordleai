@@ -16,3 +16,11 @@ function indexify(df)
     end
     return ndf
 end
+
+function unindexify(Arr)
+    key = Array{Char}(undef, size(Arr)[1], 1)
+    for i in 1:size(Arr)[1]
+        key[i] = Char((Arr[i] % 26) + 97)
+    end
+    return key
+end

@@ -2,7 +2,6 @@ wotd = "divya"
 
 function wordle(wotd, guess)
     wotd = lowercase(wotd)
-    guess = lowercase(guess)
     ret = Array{Char}(undef, length(wotd))
 
     if length(guess) != length(wotd)
@@ -59,6 +58,11 @@ end
 
 function assignscore(ret)
     score = 0
+
+    if ret == "Invalid!"
+        return 100
+    end
+    
     for i in 1:lastindex(ret)
         if ret[i] == '0'
             score = score + 15
