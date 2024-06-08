@@ -38,31 +38,22 @@ function gettingdata(vec, sz = 5, batchsize = 1, wotd = "hello")
 end
 
 function loss(model, x, y)
-    moy = model(x)
-    sco = (size(moy)[1]) * 5
+    moy = round.(model(x))
     for i in 1:size(moy)[1]
-        for j in 1:size(moy)[2]
-            
-            if round(moy[i, j]) in y[i, :]
-                sco = sco - 0.25
-            end
-
-            if round(moy[i, j]) == y[i, j]
-                sco = sco - 0.5
-            end
-
-            if (j > 1) && (abs(moy[i, j] - moy[i, j-1]) < 0.5)
-                sco = sco + 0.5
-            end
-
-        end
-    end
-
-    if sco < 27
-        println(sco)
-    end
-
+        sco = lev(moy[i, :], y[i, :])
     return sco
+end
+
+function lev(x, y)
+    if lastindex(x) == 0
+        return lastindex(y)
+    elseif lastindex(y) == 0
+        return lastindex(x)
+    elseif x[1] == y[1]
+        return lev(x[2:end], y[2:end])
+    else
+        return 1 + min(lev(x[2:end], y), lev(x, y[2:end]), lev(x[2:end], y[2:end]))
+    end
 end
 
 function training(idf, df, wordler, epochs)
