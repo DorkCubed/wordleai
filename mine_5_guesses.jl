@@ -15,7 +15,7 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
 
     # temp file that holds the current results in case the script crashes
     results_file_name = "mine_5_guesses_temp.txt"
-    results_file = open(results_file_name, "w")
+    results_file = open(results_file_name, "a+")
 
     csv_header = "n_letters,word_1,word_2,word_3,word_4,word_5"
     println(results_file, csv_header)
@@ -34,6 +34,8 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
 
     println("starting...")
 
+    max_i = 0
+
     # run through all combinations
     Threads.@threads for i_01 in 1:n_words
         for i_02 in 1:n_words
@@ -50,8 +52,8 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
                         local already_processed = combination in seen_combinations
                         if !already_processed 
                             push!(seen_combinations, combination)
+                            print("\r$(max_i) / $n_words ($(length(seen_combinations)) processed)")
                             unlock(seen_lock)
-                            print("\r# processed: $(length(seen_combinations))")
                         else
                             unlock(seen_lock)
                             @goto skip
@@ -91,6 +93,9 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
                 end
             end
         end
+        lock(results_lock)
+        max_i = max(max_i, i_01)
+        unlock(results_lock)
     end
             
     # done, print results
@@ -99,7 +104,7 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
         push!(final_results, Pair(results[set], [set...]))
     end
 
-    out_file = open("mine_5_guesses_output.txt", "w")
+    out_file = open("mine_5_guesses_output.txt", "a+")
     println(results_file, csv_header)
 
     for row in sort(final_results; lt = (a, b) -> (a.first > b.first))
@@ -113,6 +118,6 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     rm(results_file_name)
 end
 
-run(20, 25)
+run(21, 25)
 exit(0)
 
