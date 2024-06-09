@@ -4,14 +4,17 @@ words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
 close(in_file)
 
 # config
-const min_letter_count = 21
-const success_bailout_letter_count = 25
+const min_letter_count = 14
+const success_bailout_letter_count = 14
 
+# results, 5-tuple of words and n different letters
 results = Dict{Set{String}, Int}()
 results_lock = Threads.ReentrantLock()
 
+# temp file that holds the current results in case the script crashes
 const results_file_name = "mine_5_guesses_temp.txt"
 results_file = open(results_file_name, "w")
+println(results_file, "n_letters,word_1,word_2,word_3,word_4,word_5")
 
 # shuffle sets to increase odds of hitting a high scoring pair early
 import Random
@@ -25,8 +28,6 @@ words_05 = Random.shuffle(words_04)
 n_seen::UInt = 0
 const max_n_seen = length(words)
 n_seen_lock = Threads.ReentrantLock()
-
-once = false
 
 println("starting...")
 
@@ -52,7 +53,7 @@ Threads.@threads for _01 in words_01
                     if n_letters >= min_letter_count
                         lock(results_lock)
                         results[Set([_01, _02, _03, _04, _05])] = length(set)
-                        println(results_file, length(set), [_01, _02, _03, _04, _05])
+                        println(results_file, length(set), ",", _01, ",", _02, ",", _03, ",", _04, ",", _05)
                         unlock(results_lock)
                     end
 
@@ -78,9 +79,11 @@ for set in keys(results)
 end
 
 out_file = open("mine_5_guesses_output.txt", "w")
+println(results_file, "n_different_letters,word_1,word_2,word_3,word_4,word_5")
+
 for row in sort(final_results; lt = (a, b) -> (a.first > b.first))
     println(row.first, "\t", row.second)
-    println(out_file, row.first, "\t", row.second)
+    println(out_file, row.first, ",", row.second[1], ",", row.second[2], ",", row.second[3], ",", row.second[4], ",", row.second[5])
 end
 close(out_file)
 
