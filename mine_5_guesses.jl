@@ -1,6 +1,6 @@
 # load list of all wordle words
-in_file = open("./wordle-words/wordle.csv", "r")
-words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
+const in_file = open("./wordle-words/wordle.csv", "r")
+const words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
 close(in_file)
 
 # config
@@ -8,12 +8,12 @@ const min_letter_count = 21
 const success_bailout_letter_count = 25
 
 # results, 5-tuple of words and n different letters
-results = Dict{Set{String}, Int}()
-results_lock = Threads.ReentrantLock()
+const results = Dict{Set{String}, Int}()
+const results_lock = Threads.ReentrantLock()
 
 # temp file that holds the current results in case the script crashes
 const results_file_name = "mine_5_guesses_temp.txt"
-results_file = open(results_file_name, "w")
+const results_file = open(results_file_name, "w")
 println(results_file, "n_letters,word_1,word_2,word_3,word_4,word_5")
 
 # shuffle sets to increase odds of hitting a high scoring pair early
@@ -25,9 +25,9 @@ words_04 = Random.shuffle(words_03)
 words_05 = Random.shuffle(words_04)
 
 # number of runs completed for status updates, this script will take a long time
-n_seen::UInt = 0
+const n_seen::UInt = 0
 const max_n_seen = length(words)
-n_seen_lock = Threads.ReentrantLock()
+const n_seen_lock = Threads.ReentrantLock()
 
 println("starting...")
 
