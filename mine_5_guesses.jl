@@ -26,6 +26,7 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     words_03 = Random.shuffle(words_02)
     words_04 = Random.shuffle(words_03)
     words_05 = Random.shuffle(words_04)
+    n_words = length(words)
 
     # number of runs completed for status updates, this script will take a long time
     seen_combinations = Set() # keep track of seen pairing, so work is not done twice
@@ -34,17 +35,16 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     println("starting...")
 
     # run through all combinations
-    Threads.@threads 
-    for _01 in words_01
-        for _02 in words_02
-            if _02 == _01 break end
-            for _03 in words_03
-                if _03 == _02 || _03 == _01 break end
-                for _04 in words_04
-                    if _04 == _03 || _04 == _02 || _04 == _01 break end
-                    for _05 in words_05
-                        if _05 == _04 || _05 == _03 || _05 == _02 || _05 == _01 break end
-                        local combination = hash(Set([_01, _02, _03, _04, _05]))
+    Threads.@threads for i_01 in 1:n_words
+        for i_02 in 1:n_words
+            if i_02 == i_01 break end
+            for i_03 in 1:n_words
+                if i_03 == i_02 || i_03 == i_01 break end
+                for i_04 in 1:n_words
+                    if i_04 == i_03 || i_04 == i_02 || i_04 == i_01 break end
+                    for i_05 in 1:n_words
+                        if i_05 == i_04 || i_05 == i_03 || i_05 == i_02 || i_05 == i_01 break end
+                        local combination = hash(Set([i_01, i_02, i_03, i_04, i_05]))
                         
                         lock(seen_lock)
                         local already_processed = combination in seen_combinations
@@ -58,19 +58,27 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
                         end
 
                         local set = Set()
-                        for c in _01 push!(set, word) end
-                        for c in _02 push!(set, word) end
-                        for c in _03 push!(set, word) end
-                        for c in _04 push!(set, word) end
-                        for c in _05 push!(set, word) end
+                        for c in words_01[i_01] push!(set, c) end
+                        for c in words_02[i_02] push!(set, c) end
+                        for c in words_03[i_03] push!(set, c) end
+                        for c in words_04[i_04] push!(set, c) end
+                        for c in words_05[i_05] push!(set, c) end
 
                         local n_letters = length(set)
                         if n_letters >= min_letter_count
+                            _01 = words_01[i_01]
+                            _02 = words_02[i_02]
+                            _03 = words_03[i_03]
+                            _04 = words_04[i_04]
+                            _05 = words_05[i_05]
+
                             lock(results_lock)
                             results[Set([_01, _02, _03, _04, _05])] = n_letters
                             println(results_file, n_letters, ",", _01, ",", _02, ",", _03, ",", _04, ",", _05)
                             @info "found valid combination with $(n_letters) letters: $([_01, _02, _03, _04, _05])"
                             unlock(results_lock)
+                        else
+                            @goto skip
                         end
 
                         if n_letters >= success_bailout_letter_count # found a valid pair, bail out of all loops
@@ -105,6 +113,6 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     rm(results_file_name)
 end
 
-run(19, 22)
+run(20, 25)
 exit(0)
 
