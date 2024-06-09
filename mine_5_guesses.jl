@@ -25,9 +25,8 @@ words_04 = Random.shuffle(words_03)
 words_05 = Random.shuffle(words_04)
 
 # number of runs completed for status updates, this script will take a long time
-const n_seen::UInt = 0
-const max_n_seen = length(words)
-const n_seen_lock = Threads.ReentrantLock()
+const seen_combinations = Set() # keep track of seen pairing, so work is not done twice
+const seen_lock = Threads.ReentrantLock()
 
 println("starting...")
 
@@ -41,34 +40,41 @@ Threads.@threads for _01 in words_01
                 if _04 == _03 break end
                 for _05 in words_05
                     if _05 == _04 break end
+                    local combination = Set([_01, _02, _03, _04, _05])
+                    lock(seen_lock)
+                    local already_processed = hash(combination) in seen_combinations
+                    unlock(seen_lock)
 
-                    local set = Set()
-                    for word in [_01, _02, _03, _04, _05]
-                        for c in word
-                            push!(set, c)
+                    if !already_processed
+                        lock(seen_lock)
+                        push!(seen_combinations, hash(combination))
+                        print("\r processed: $(length(seen_combinations))")
+                        unlock(seen_lock)
+
+                        local set = Set()
+                        for word in combination
+                            for c in word
+                                push!(set, c)
+                            end
                         end
-                    end
 
-                    local n_letters = length(set)
-                    if n_letters >= min_letter_count
-                        lock(results_lock)
-                        results[Set([_01, _02, _03, _04, _05])] = length(set)
-                        println(results_file, length(set), ",", _01, ",", _02, ",", _03, ",", _04, ",", _05)
-                        unlock(results_lock)
-                    end
+                        local n_letters = length(set)
+                        if n_letters >= min_letter_count
+                            lock(results_lock)
+                            results[Set([_01, _02, _03, _04, _05])] = length(set)
+                            println(results_file, length(set), ",", _01, ",", _02, ",", _03, ",", _04, ",", _05)
+                            @info "found valid combination with $(n_letters) letters: $([_01, _02, _03, _04, _05])"
+                            unlock(results_lock)
+                        end
 
-                    if n_letters >= success_bailout_letter_count # found a valid pair, bail out of all loops
-                        @info "Thread #$(Threads.threadid()) found combination with $success_bailout_letter_count letters, bailing out..."  
-                        return
+                        if n_letters >= success_bailout_letter_count # found a valid pair, bail out of all loops
+                            @info "Thread #$(Threads.threadid()) found combination with $success_bailout_letter_count letters, bailing out..."  
+                            return
+                        end
                     end
                 end
             end
-        end 
-    
-        lock(n_seen_lock)
-        Main.n_seen = Main.n_seen + 1
-        println("# runs completed: $n_seen / $max_n_seen")
-        unlock(n_seen_lock)
+        end
     end
 end
           
