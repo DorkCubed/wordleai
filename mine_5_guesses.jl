@@ -4,11 +4,14 @@ words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
 close(in_file)
 
 # config
-const min_letter_count = 21
-const success_bailout_letter_count = 25
+const min_letter_count = 12
+const success_bailout_letter_count = 12
 
 results = Dict{Set{String}, Int}()
 results_lock = Threads.ReentrantLock()
+
+const results_file_name = "mine_5_guesses_temp.txt"
+results_file = open(results_file_name, "w")
 
 # shuffle sets to increase odds of hitting a high scoring pair early
 import Random
@@ -49,6 +52,7 @@ Threads.@threads for _01 in words_01
                     if n_letters >= min_letter_count
                         lock(results_lock)
                         results[Set([_01, _02, _03, _04, _05])] = length(set)
+                        println(results_file, length(set), [_01, _02, _03, _04, _05])
                         unlock(results_lock)
                     end
 
@@ -79,5 +83,10 @@ for row in sort(final_results; lt = (a, b) -> (a.first > b.first))
     println(out_file, row.first, "\t", row.second)
 end
 close(out_file)
+
+# cleanup temp file
+close(results_file)
+rm(results_file_name)
+
 exit(0)
 
