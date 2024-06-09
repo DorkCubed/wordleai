@@ -4,8 +4,8 @@ const words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
 close(in_file)
 
 # config
-const min_letter_count = 21
-const success_bailout_letter_count = 25
+const min_letter_count = 19
+const success_bailout_letter_count = 21
 
 # results, 5-tuple of words and n different letters
 const results = Dict{Set{String}, Int}()
@@ -18,17 +18,23 @@ println(results_file, "n_letters,word_1,word_2,word_3,word_4,word_5")
 
 # shuffle sets to increase odds of hitting a high scoring pair early
 import Random
-words_01 = Random.shuffle(words)
-words_02 = Random.shuffle(words_01)
-words_03 = Random.shuffle(words_02)
-words_04 = Random.shuffle(words_03)
-words_05 = Random.shuffle(words_04)
+const words_01 = Random.shuffle(words)
+const words_02 = Random.shuffle(words_01)
+const words_03 = Random.shuffle(words_02)
+const words_04 = Random.shuffle(words_03)
+const words_05 = Random.shuffle(words_04)
 
 # number of runs completed for status updates, this script will take a long time
 const seen_combinations = Set() # keep track of seen pairing, so work is not done twice
 const seen_lock = Threads.ReentrantLock()
 
 println("starting...")
+
+function add!(set, word)
+    for c in word 
+        push!(set, word) 
+    end
+end
 
 # run through all combinations
 Threads.@threads for _01 in words_01
@@ -52,11 +58,11 @@ Threads.@threads for _01 in words_01
                         unlock(seen_lock)
 
                         local set = Set()
-                        for word in combination
-                            for c in word
-                                push!(set, c)
-                            end
-                        end
+                        add!(set, _01)
+                        add!(set, _02)
+                        add!(set, _03)
+                        add!(set, _04)
+                        add!(set, _05)
 
                         local n_letters = length(set)
                         if n_letters >= min_letter_count
@@ -71,6 +77,8 @@ Threads.@threads for _01 in words_01
                             @info "Thread #$(Threads.threadid()) found combination with $success_bailout_letter_count letters, bailing out..."  
                             return
                         end
+
+                        @label skip
                     end
                 end
             end
