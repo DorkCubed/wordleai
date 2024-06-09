@@ -4,8 +4,8 @@ words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
 close(in_file)
 
 # config
-const min_letter_count = 14
-const success_bailout_letter_count = 14
+const min_letter_count = 21
+const success_bailout_letter_count = 25
 
 # results, 5-tuple of words and n different letters
 results = Dict{Set{String}, Int}()
