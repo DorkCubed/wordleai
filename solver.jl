@@ -4,9 +4,9 @@ include("wordle.jl")
 include("indexing.jl")
 
 wordler = Chain(
-    Conv((2, 1), 5 => 25, relu),
+    Conv((2, 1), 5 => 25, tanh),
     x -> reshape(x, (5, 25, 1, size(x, 4))),
-    Conv((1, 25), 1 => 1, relu),
+    Conv((1, 25), 1 => 1, tanh),
     x -> reshape(x, :, size(x, 4)),
     Dense(5, 5, relu)
     )
@@ -38,9 +38,26 @@ function gettingdata(vec, sz = 5, batchsize = 1, wotd = "hello")
 end
 
 function loss(model, x, y)
-    moy = round.(model(x))
+    moy = (round.(model(x)))'
+    sco = size(moy)[1]
+
     for i in 1:size(moy)[1]
-        sco = lev(moy[i, :], y[i, :])
+        for j in 1:size(moy)[2]
+
+            if moy[i, j] == y[i, j]
+                sco = sco - 0.2
+
+            elseif moy[i, j] in y[i, :]
+                sco = sco - 0.05
+            end
+
+            if (j > 1) && (moy[i, j] == moy[i, j - 1])
+                sco = sco + 0.1
+            end
+        
+        end
+    end
+
     return sco
 end
 
@@ -58,12 +75,12 @@ end
 
 function training(idf, df, wordler, epochs)
 
-    opt = Flux.setup(AdamW(0.25), wordler)
+    opt = Flux.setup(Adam(0.1), wordler)
 
     for epoch in 1:epochs
         randomindex = rand(1:size(df)[1])
         randomword = df[randomindex, 1]
-        solu = idf[randomindex, :]
+        solu = idf[randomindex + 1, :]
         solu = solu'
         solu = vcat(solu, solu, solu, solu, solu)
 
@@ -72,8 +89,8 @@ function training(idf, df, wordler, epochs)
     end
 end
 
-training(idf, df, wordler, 100)
-a = gettingdata(df, 5, 1, "abcde")
+training(idf, df, wordler, 2500)
+a = gettingdata(df, 5, 1, "crest")
 display(a)
 b = wordler(a)
 b = round.(b)

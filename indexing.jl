@@ -9,7 +9,7 @@ function indexify(df)
         word = lowercase(word)
         word = collect(word)
         for j in 1:(lastindex(word))
-            c = Int8(word[j]) - 96
+            c = Int8(word[j]) - 97
             key[j] = c 
         end
         ndf = vcat(ndf, key)
