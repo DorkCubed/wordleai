@@ -6,8 +6,40 @@ find 5-tupels of five letter words that have the largest set of pairwise differe
 function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     # load list of all wordle words
     in_file = open("./wordle-words/wordle.csv", "r")
-    words = [String(strip(split(line, ",")[1])) for line in eachline(in_file)]
+    words_to_occurrence = Pair{String, Float32}[]
+    
+    skip_header = true
+    for line in eachline(in_file)
+        if skip_header 
+            skip_header = false
+            continue 
+        end
+        push!(words_to_occurrence, String(strip(split(line, ",")[1])) => parse(Float32, strip(split(line, ",")[2])))
+    end
     close(in_file)
+
+    sort!(words_to_occurrence; lt = (a, b) -> a.second > b.second)
+    words = String[]
+
+    # only use words that have 5 different letters
+    n_words = 1000
+    words_seen = Set()
+    for i in 1:length(words_to_occurrence)
+        if i > n_words break end
+
+        set = Set{Char}()
+        word = words_to_occurrence[i].first
+        for c in word 
+            push!(set, c)
+        end
+
+        if length(set) == 5 && !(hash(set) in words_seen)
+            push!(words, word)
+            push!(words_seen, hash(set))
+        end
+    end
+
+    n_words = length(words)
 
     # results, 5-tuple of words and n different letters
     results = Dict{Set{String}, Int}()
@@ -26,13 +58,12 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     words_03 = Random.shuffle(words_02)
     words_04 = Random.shuffle(words_03)
     words_05 = Random.shuffle(words_04)
-    n_words = length(words)
 
     # number of runs completed for status updates, this script will take a long time
-    seen_combinations = Set() # keep track of seen pairing, so work is not done twice
-    seen_lock = Threads.ReentrantLock()
+    # seen_combinations = Set() # keep track of seen pairing, so work is not done twice
+    # seen_lock = Threads.ReentrantLock()
 
-    println("starting...")
+    @info "starting..."
 
     max_i = 0
 
@@ -46,8 +77,9 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
                     if i_04 == i_03 || i_04 == i_02 || i_04 == i_01 break end
                     for i_05 in 1:n_words
                         if i_05 == i_04 || i_05 == i_03 || i_05 == i_02 || i_05 == i_01 break end
-                        local combination = hash(Set([i_01, i_02, i_03, i_04, i_05]))
                         
+                        #==
+                        local combination = hash(Set([i_01, i_02, i_03, i_04, i_05]))
                         lock(seen_lock)
                         local already_processed = combination in seen_combinations
                         if !already_processed 
@@ -58,6 +90,7 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
                             unlock(seen_lock)
                             @goto skip
                         end
+                        ==#
 
                         local set = Set()
                         for c in words_01[i_01] push!(set, c) end
@@ -93,9 +126,10 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
                 end
             end
         end
-        lock(results_lock)
+
+        GC.safepoint()
         max_i = max(max_i, i_01)
-        unlock(results_lock)
+        print("\r$(max_i) / $n_words")
     end
             
     # done, print results
@@ -116,8 +150,10 @@ function run(min_letter_count::Integer, success_bailout_letter_count::Integer)
     # cleanup temp file
     close(results_file)
     rm(results_file_name)
+
+    @info "done."
 end
 
-run(21, 25)
+run(22, 25)
 exit(0)
 
